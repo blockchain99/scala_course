@@ -1,5 +1,6 @@
 package objsets
 
+import common._
 import TweetReader._
 
 /**
@@ -46,10 +47,16 @@ abstract class TweetSet {
    * Question: Can we implment this method here, or should it remain abstract
    * and be implemented in the subclasses?
    */
+  /*. filter takes as argument a function, the predicate, which takes a tweet and
+   returns a boolean. filter then returns the subset of all the tweets
+   in the original set for which the predicate is true.                     */
+
     def filter(p: Tweet => Boolean): TweetSet = filterAcc(p, new Empty)
   
   /**
    * This is a helper method for `filter` that propagetes the accumulated tweets.
+    * filterAcc which takes an accumulator set as a second argument.
+    * This accumulator contains the ongoing result of the filtering.
    */
   def filterAcc(p: Tweet => Boolean, acc: TweetSet): TweetSet
 
@@ -59,6 +66,12 @@ abstract class TweetSet {
    * Question: Should we implment this method here, or should it remain abstract
    * and be implemented in the subclasses?
    */
+  /* method union takes another set that, and computes a new set which is the union of this and that,
+   i.e. a set that contains exactly the elements that are either in this or in that, or in both.
+   ** implementation of Union is asf. ***
+  type Set = Int => Boolean
+  def union(a: Set, b: Set): Set = item => a(item) || b(item)  */
+
     def union(that: TweetSet): TweetSet  //this U that
   
   /**
@@ -71,6 +84,8 @@ abstract class TweetSet {
    * and be implemented in the subclasses?
    */
     def mostRetweeted: Tweet
+
+    def empty: Boolean
   
   /**
    * Returns a list containing all tweets of this set, sorted by retweet count
@@ -140,9 +155,15 @@ class Empty extends TweetSet {
 class NonEmpty(elem: Tweet, left: TweetSet, right: TweetSet) extends TweetSet {
 
   def filterAcc(p: Tweet => Boolean, acc: TweetSet): TweetSet = {
+    //if p condition is true, left Set
       if (p(elem)) left.filterAcc(p, right.filterAcc(p, acc.incl(elem)))
       else left.filterAcc(p, right.filterAcc(p, acc))
     }
+
+  def union(that: TweetSet): TweetSet = {
+    (left union(right union that).incl(elem))
+  }
+
   def mostRetweeted: Tweet = {
       lazy val leftMost = left.mostRetweeted
       lazy val rightMost = right.mostRetweeted
@@ -159,7 +180,18 @@ class NonEmpty(elem: Tweet, left: TweetSet, right: TweetSet) extends TweetSet {
   }
 
   def empty: Boolean = false
+/* produce a linear sequence of tweets (as an instance of class TweetList),
+ordered by their number of retweets:
+Traversing one data structure(TweetSet), building a second data structure(TweetList).
+* how to :
+* start with the empty list Nil (containing no tweets), and to find the tweet with the most retweets
+* in the input TweetSet. This tweet is removed from the TweetSet
+* (that is, we obtain a new TweetSet that has all the tweets of the original set
+ * except for the tweet that was “removed”; this immutable set operation, remove,
+ * is already implemented for you), and added to the result list by creating a new Cons.
+ * After that, the process repeats itself, but now we are searching through a TweetSet with one less tweet.
 
+*/
   def descendingByRetweet: TweetList = {
       new Cons(mostRetweeted, remove(mostRetweeted).descendingByRetweet)
   }
@@ -211,20 +243,25 @@ object Nil extends TweetList {
 class Cons(val head: Tweet, val tail: TweetList) extends TweetList {
   def isEmpty = false
 }
-
-
+/*Need to detect influential tweets in a set of recent tweets.   */
+/*The first list corresponds to keywords associated with Google and Android smartphones,
+while the second list corresponds to keywords associated with Apple and iOS devices.
+Your objective is to detect which platform has generated more interest or activity in the past few days.
+using method of List and method(exits), contains*/
 object GoogleVsApple {
   val google = List("android", "Android", "galaxy", "Galaxy", "nexus", "Nexus")
   val apple = List("ios", "iOS", "iphone", "iPhone", "ipad", "iPad")
-
-    lazy val googleTweets: TweetSet = ???
-  lazy val appleTweets: TweetSet = ???
+/* Create 1st TweetSet, googleTweets, should contain all tweets that mention (in their “text”)
+one of the keywords in the google list. 2nd TweetSet, appleTweets, should contain all tweets
+that mention one of the keyword in the apple list  */
+  lazy val googleTweets: TweetSet = TweetReader.allTweets.filter(tw => google.exists(e => tw.text.contains(e)))
+  lazy val appleTweets: TweetSet = TweetReader.allTweets.filter(tw => apple.exists(e => tw.text.contains(e)))
   
   /**
    * A list of all tweets mentioning a keyword from either apple or google,
    * sorted by the number of retweets.
    */
-     lazy val trending: TweetList = ???
+     lazy val trending: TweetList = (googleTweets.union(appleTweets)).descendingByRetweet
   }
 
 object Main extends App {

@@ -73,6 +73,6 @@ object TweetReader {
   private def unionOfAllTweetSets(curSets: List[TweetSet], acc: TweetSet): TweetSet =
     if (curSets.isEmpty) acc
     else unionOfAllTweetSets(curSets.tail, acc.union(curSets.head))
-
+/* TweetReader.allTweets returns an instance of TweetSet containing a set of all available tweets. */
   val allTweets: TweetSet = unionOfAllTweetSets(tweetSets, new Empty)
 }
