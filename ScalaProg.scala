@@ -76,12 +76,22 @@ object ScalaProg {
 
 
     val list = "apple" :: "banana" :: 1 :: 2 :: Nil  //List with 4 elements
-    println("list with Any type element : "+list)
+    println("** list with Any type element : "+list)
     var strings = list.filter{
       case _ : String => true
       case _ => false
     }
-    println("list with string : "+ strings)
+    println("** list with string : "+ strings)
+
+    /* function */
+    def onlyStrings(a: Any) = a match {
+      case _: String => true
+//      case s: String => true //same as above
+      case _ => false
+    }
+    val strings_func = list.filter(onlyStrings)
+    println("* strings_func : "+ strings_func)
+
 
     val twoElementList = "persimon" :: 55 :: Nil
     println(twoElementList)
